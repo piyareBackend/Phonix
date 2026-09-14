@@ -9,5 +9,19 @@
     "entryType": "demo",
     "entryUrl": "",
     "status": "enabled"
+  },
+  {
+    "id": "the-last-signal",
+    "title": "The Last Signal",
+    "category": "story",
+    "tags": ["story", "co-op", "mystery", "2-player", "p2p"],
+    "author": "Phonix",
+    "theme": "linear-gradient(135deg,#111827,#4f46e5)",
+    "entryType": "iframe",
+    "entryUrl": "games/the-last-signal.html",
+    "multiplayer": true,
+    "players": "2",
+    "p2pOwner": "game",
+    "status": "enabled"
   }
 ]
