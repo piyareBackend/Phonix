@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Last Signal — Phonix</title>
+<style>
+:root{font-family:Inter,system-ui,sans-serif;color:#f5f7fb;background:#07090d}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -10%,#26345d 0,#0b1020 35%,#07090d 70%);display:grid;place-items:center;padding:18px}.app{width:min(760px,100%);border:1px solid #27304a;background:rgba(12,16,27,.92);backdrop-filter:blur(20px);border-radius:28px;overflow:hidden;box-shadow:0 24px 80px #0008}.top{padding:22px 22px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8ea3d7}.title{margin:5px 0 0;font-size:25px}.status{font-size:12px;color:#a9b7d8}.main{padding:8px 22px 24px}.scene{font-size:14px;color:#9eafd5;margin-bottom:8px}.story{font-size:21px;line-height:1.5;min-height:150px;margin:0 0 18px}.choices{display:grid;gap:10px}.choice,.action{border:1px solid #34405e;background:#12192a;color:#fff;border-radius:16px;padding:14px 15px;text-align:left;cursor:pointer;font:inherit}.choice:hover,.choice:focus-visible,.action:hover,.action:focus-visible{border-color:#6d86c8;background:#18223a;outline:none}.choice:disabled{opacity:.42;cursor:not-allowed}.meta{display:flex;justify-content:space-between;gap:10px;margin-top:18px;color:#7f8ca9;font-size:12px}.bar{height:5px;background:#171e30}.fill{height:100%;width:0;background:#7d9cff;transition:width .3s}.wait{padding:14px;border:1px dashed #3a4663;border-radius:14px;color:#aab6d0;margin-bottom:12px}.footer{display:flex;justify-content:space-between;gap:10px;margin-top:18px}.action{text-align:center;padding:10px 14px;font-size:13px}.hidden{display:none}@media(max-width:560px){body{padding:0}.app{min-height:100vh;border-radius:0}.story{font-size:19px;min-height:180px}.top,.main{padding-left:18px;padding-right:18px}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="top"><div><div class="eyebrow">Phonix · 2 Player Story</div><h1 class="title">The Last Signal</h1></div><div id="status" class="status">Connecting…</div></div>
+<div class="bar"><div id="fill" class="fill"></div></div>
+<main class="main">
+<div id="wait" class="wait">Share the room link with one other player. The story begins when both players are connected.</div>
+<div id="scene" class="scene"></div><p id="story" class="story"></p><div id="choices" class="choices"></div>
+<div class="meta"><span id="players">Players: 1/2</span><span id="progress"></span></div>
+<div class="footer"><button id="exit" class="action" type="button">Exit</button><button id="restart" class="action" type="button">Restart story</button></div>
+</main></div>
+<script type="module">
+import {joinRoom,selfId} from 'https://esm.run/trystero';
+const params=new URLSearchParams(location.search), roomId=(params.get('room')||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+const APP_ID='phonix-last-signal-v1';
+const statusEl=document.querySelector('#status'),waitEl=document.querySelector('#wait'),sceneEl=document.querySelector('#scene'),storyEl=document.querySelector('#story'),choicesEl=document.querySelector('#choices'),playersEl=document.querySelector('#players'),progressEl=document.querySelector('#progress'),fillEl=document.querySelector('#fill');
+const scenes={
+intro:{label:'01 · The radio room',text:'At 02:13, an abandoned coastal station wakes up and transmits a three-word distress signal. You and your partner are the only people close enough to investigate. What do you do first?',choices:[['signal','Trace the signal source'],['door','Enter the station immediately']]},
+station:{label:'02 · Inside',text:'Dust covers the consoles, but one monitor is warm. A red light blinks in a pattern that resembles a countdown. The floor map shows two routes to the transmitter.',choices:[['north','Take the maintenance corridor'],['tower','Climb toward the transmitter room']]},
+code:{label:'03 · The transmitter',text:'The transmitter asks for a four-symbol key. Your partner finds half the sequence scratched into a desk; you find the other half hidden in the radio log. Do you combine the clues or force the panel?',choices:[['decode','Combine the two clues'],['force','Try the panel without the full key']]},
+ending:{label:'04 · Final transmission',text:'The transmitter comes alive. A final message waits for two confirmations. Your choices have changed what the station can send back into the night.',choices:[]}
+};
+let peers=new Set(),state={scene:'intro',choices:{},ending:null},joined=false;
+const room=joinRoom({appId:APP_ID},roomId||'DEMO01');
+const sync=room.makeAction('sync'),choice=room.makeAction('choice'),control=room.makeAction('control');
+const announce=()=>{window.parent.postMessage({type:'phonix:status',status:peers.size?'connected':'waiting',peers:peers.size},'*');};
+const render=()=>{const s=scenes[state.scene]||scenes.intro;sceneEl.textContent=s.label;storyEl.textContent=state.scene==='ending'?state.ending:s.text;choicesEl.innerHTML='';const mine=state.choices[selfId];if(state.scene!=='ending'){s.choices.forEach(([id,label])=>{const b=document.createElement('button');b.className='choice';b.type='button';b.textContent=label;b.disabled=!!mine;b.onclick=()=>{state.choices[selfId]=id;choice.send({player:selfId,scene:state.scene,id});render();maybeAdvance()};choicesEl.appendChild(b)});}
+const count=Object.keys(state.choices).length;waitEl.classList.toggle('hidden',peers.size>0&&state.scene==='ending');if(state.scene!=='ending')waitEl.textContent=mine?(count>=2?'Both choices received.':'Waiting for your partner to choose…'):'Choose an action. Your partner will see it instantly.';playersEl.textContent=`Players: ${Math.min(2,peers.size+1)}/2`;progressEl.textContent=state.scene==='intro'?'':state.scene==='station'?'Chapter 2/4':'Chapter 3/4';fillEl.style.width=state.scene==='intro'?'10%':state.scene==='station'?'40%':state.scene==='code'?'70%':'100%';};
+function next(a,b){const key=[a,b].sort().join('+');if(state.scene==='intro')state.scene='station';else if(state.scene==='station')state.scene='code';else if(state.scene==='code'){state.scene='ending';state.ending=key.includes('decode')?'You unlock a hidden emergency channel. The signal answers with a location and a promise: someone is still listening. You both leave with the coordinates safely recorded.':'The panel rejects the shortcut and triggers a harmless lockdown. Working together, you restore the console and recover one last clue before leaving.';}state.choices={};}
+function maybeAdvance(){if(Object.keys(state.choices).length>=2){next(...Object.values(state.choices));sync.send(state);render();}}
+choice.onMessage=data=>{if(!data||data.scene!==state.scene||data.player===selfId)return;state.choices[data.player]=data.id;render();maybeAdvance()};
+sync.onMessage=data=>{if(data&&data.scene){state=data;render()}};
+control.onMessage=data=>{if(data?.type==='reset'){state={scene:'intro',choices:{},ending:null};render()}};
+room.onPeerJoin=peer=>{peers.add(peer);joined=true;statusEl.textContent='Connected';announce();if(Object.keys(state.choices).length||state.scene!=='intro')setTimeout(()=>sync.send(state),250);render()};
+room.onPeerLeave=peer=>{peers.delete(peer);statusEl.textContent=peers.size?'Connected':'Waiting';announce();render()};
+statusEl.textContent='Waiting for player 2';announce();render();
+window.parent.postMessage({type:'phonix:title',title:'The Last Signal'},'*');
+document.querySelector('#restart').onclick=()=>{state={scene:'intro',choices:{},ending:null};control.send({type:'reset'});render()};
+document.querySelector('#exit').onclick=()=>window.parent.postMessage({type:'phonix:exit'},'*');
+if(!roomId){waitEl.textContent='No room code was supplied. Return to Phonix and create a multiplayer room first.';document.querySelectorAll('.choice').forEach(b=>b.disabled=true)}
+</script>
+</body></html>
