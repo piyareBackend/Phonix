@@ -1,0 +1,13 @@
+[
+  {
+    "id": "neon-duel",
+    "title": "Neon Duel",
+    "category": "1v1",
+    "tags": ["duel", "pvp", "arcade"],
+    "author": "Phonix",
+    "theme": "linear-gradient(135deg,#0a84ff,#5e5ce6)",
+    "entryType": "demo",
+    "entryUrl": "",
+    "status": "enabled"
+  }
+]
