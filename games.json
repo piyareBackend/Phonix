@@ -23,5 +23,19 @@
     "players": "2",
     "p2pOwner": "game",
     "status": "enabled"
+  },
+  {
+    "id": "tactical-arena",
+    "title": "Tactical Arena",
+    "category": "battle-royale",
+    "tags": ["3d", "shooter", "arena", "multiplayer", "webrtc", "p2p"],
+    "author": "Phonix",
+    "theme": "linear-gradient(135deg,#07111f,#1769aa)",
+    "entryType": "iframe",
+    "entryUrl": "games/tactical-arena.html",
+    "multiplayer": true,
+    "players": "8",
+    "p2pOwner": "game",
+    "status": "enabled"
   }
 ]
